@@ -1,0 +1,9 @@
+# 主域名与推流节点走代理
+HOST,emby.misaka.si,Emby代理
+HOST,nc1.misaka.si,Emby代理
+HOST,ca1.misaka.si,Emby代理
+
+# 本服当前国内盘域名直连
+HOST-SUFFIX,cmecloud.cn,DIRECT
+HOST-SUFFIX,139.com,DIRECT
+HOST-SUFFIX,10086.cn,DIRECT
