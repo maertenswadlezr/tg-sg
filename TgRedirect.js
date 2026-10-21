@@ -1,10 +1,10 @@
 /**
- * Egern: t.me → 第三方 Telegram 客户端重定向
- *
- * 说明：
- * - 客户端选择通过模块的 env_schema 写入模块级 env
- * - 脚本直接读取 ctx.env.CLIENT
+ * Quantumult X: t.me → 第三方 Telegram 客户端重定向
  */
+
+// 在这里设置你想跳转的目标客户端名称：
+// 可选: "Telegram", "Nagram", "Swiftgram", "Turrit", "iMe", "Nicegram", "Lingogram", "Regram"
+const TARGET_CLIENT = "Swiftgram"; 
 
 const SCHEME = {
   Telegram: "tg",
@@ -48,18 +48,13 @@ function deeplink(s, path, qs) {
   return `${s}://resolve?domain=${encodeURIComponent(p[0])}`;
 }
 
-export default async function (ctx) {
-  const url = ctx.request.url;
-  const m = url.match(/^https?:\/\/(?:t\.me|telegram\.me)\/(.+)$/i);
-  if (!m) return;
+const url = $request.url;
+const m = url.match(/^https?:\/\/(?:t\.me|telegram\.me)\/(.+)$/i);
 
-  const client = (ctx.env?.CLIENT || "Telegram").trim();
-
-  // 选官方 Telegram 直接放行，不重定向
-  if (client === "Telegram") return;
-
-  const scheme = SCHEME[client] || "tg";
-
+if (!m || TARGET_CLIENT === "Telegram") {
+  $done({});
+} else {
+  const scheme = SCHEME[TARGET_CLIENT] || "tg";
   let tail = m[1];
   if (tail.startsWith("s/")) tail = tail.slice(2);
 
@@ -68,14 +63,19 @@ export default async function (ctx) {
   const qs = qi < 0 ? "" : tail.slice(qi + 1);
 
   const loc = deeplink(scheme, path, qs);
-  if (!loc) return;
 
-  return ctx.respond({
-    status: 302,
-    headers: {
-      Location: loc,
-      "Cache-Control": "no-store, no-cache",
-    },
-    body: "",
-  });
+  if (loc) {
+    $done({
+      response: {
+        status: 302,
+        headers: {
+          Location: loc,
+          "Cache-Control": "no-store, no-cache",
+        },
+        body: "",
+      },
+    });
+  } else {
+    $done({});
+  }
 }
