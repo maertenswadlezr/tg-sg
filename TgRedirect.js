@@ -1,10 +1,10 @@
 /**
  * Quantumult X: t.me → 第三方 Telegram 客户端重定向
+ *
+ * 说明：
+ * 圈x 通过 $prefs.valueForKey("tg_client") 读取配置的客户端名称。
+ * 支持在 BoxJS 或脚本顶部修改默认值。
  */
-
-// 在这里设置你想跳转的目标客户端名称：
-// 可选: "Telegram", "Nagram", "Swiftgram", "Turrit", "iMe", "Nicegram", "Lingogram", "Regram"
-const TARGET_CLIENT = "Swiftgram"; 
 
 const SCHEME = {
   Telegram: "tg",
@@ -48,13 +48,26 @@ function deeplink(s, path, qs) {
   return `${s}://resolve?domain=${encodeURIComponent(p[0])}`;
 }
 
-const url = $request.url;
-const m = url.match(/^https?:\/\/(?:t\.me|telegram\.me)\/(.+)$/i);
+(function () {
+  const url = $request.url;
+  const m = url.match(/^https?:\/\/(?:t\.me|telegram\.me)\/(.+)$/i);
+  if (!m) {
+    $done({});
+    return;
+  }
 
-if (!m || TARGET_CLIENT === "Telegram") {
-  $done({});
-} else {
-  const scheme = SCHEME[TARGET_CLIENT] || "tg";
+  // 默认客户端，可直接改这里的字符串，如 "Swiftgram"
+  const defaultClient = "Swiftgram";
+  const client = ($prefs.valueForKey("tg_client") || defaultClient).trim();
+
+  // 如果选择官方 Telegram 则直接放行
+  if (client === "Telegram") {
+    $done({});
+    return;
+  }
+
+  const scheme = SCHEME[client] || "tg";
+
   let tail = m[1];
   if (tail.startsWith("s/")) tail = tail.slice(2);
 
@@ -63,19 +76,20 @@ if (!m || TARGET_CLIENT === "Telegram") {
   const qs = qi < 0 ? "" : tail.slice(qi + 1);
 
   const loc = deeplink(scheme, path, qs);
-
-  if (loc) {
-    $done({
-      response: {
-        status: 302,
-        headers: {
-          Location: loc,
-          "Cache-Control": "no-store, no-cache",
-        },
-        body: "",
-      },
-    });
-  } else {
+  if (!loc) {
     $done({});
+    return;
   }
-}
+
+  // 圈x 中通过 $done 直接返回 302 响应
+  $done({
+    response: {
+      status: "HTTP/1.1 302 Found",
+      headers: {
+        Location: loc,
+        "Cache-Control": "no-store, no-cache",
+      },
+      body: "",
+    },
+  });
+})();
