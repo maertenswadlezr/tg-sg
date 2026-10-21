@@ -1,5 +1,5 @@
 /**
- * Quantumult X: t.me 多客户端交互选择跳转
+ * Quantumult X: t.me 选择跳转客户端 (修改响应体方案)
  */
 
 const CLIENTS = [
@@ -57,7 +57,6 @@ function getDeepLinkPath(path, qs) {
     return;
   }
 
-  // 生成选项按钮
   const buttonsHtml = CLIENTS.map(c => `
     <button class="btn" onclick="openClient('${c.scheme}')">${c.name}</button>
   `).join("");
@@ -67,7 +66,7 @@ function getDeepLinkPath(path, qs) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>选择打开的客户端</title>
+  <title>选择打开方式</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -79,6 +78,7 @@ function getDeepLinkPath(path, qs) {
       align-items: center;
       min-height: 80vh;
       justify-content: center;
+      box-sizing: border-box;
     }
     .card {
       background: #ffffff;
@@ -149,15 +149,5 @@ function getDeepLinkPath(path, qs) {
 </body>
 </html>`;
 
-  // 返回自定义的选择页面
-  $done({
-    response: {
-      status: "HTTP/1.1 200 OK",
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "no-store, no-cache",
-      },
-      body: html,
-    },
-  });
+  $done({ body: html });
 })();
