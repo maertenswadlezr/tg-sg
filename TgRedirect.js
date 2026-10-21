@@ -1,32 +1,39 @@
 /**
- * Quantumult X: Telegram 客户端多选跳转中转页
+ * Quantumult X: t.me 多客户端交互选择跳转
  */
 
-const SCHEMES = {
-  "Swiftgram": "sg",
-  "Nicegram": "ng",
-  "Turrit": "turrit",
-  "iMe": "ime",
-  "Lingogram": "lingo",
-  "官方 Telegram": "tg"
-};
+const CLIENTS = [
+  { name: "Swiftgram", scheme: "sg" },
+  { name: "Turrit", scheme: "turrit" },
+  { name: "Nicegram", scheme: "ng" },
+  { name: "iMe", scheme: "ime" },
+  { name: "Telegram (官方)", scheme: "tg" },
+  { name: "Lingogram", scheme: "lingo" },
+  { name: "Regram", scheme: "rg" },
+];
 
 function qval(qs, key) {
   if (!qs) return "";
-  const re = new RegExp("(?:^|&)" + key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "=([^&]*)");
+  const re = new RegExp(
+    "(?:^|&)" + key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "=([^&]*)",
+  );
   const m = qs.match(re);
   return m ? decodeURIComponent(m[1]) : "";
 }
 
-function deeplink(s, path, qs) {
+function getDeepLinkPath(path, qs) {
   const p = path.split("/").filter(Boolean);
   if (!p[0]) return "";
-  if (p[0][0] === "+") return `${s}://join?invite=${encodeURIComponent(p[0].slice(1))}`;
-  if (p[0] === "joinchat" && p[1]) return `${s}://join?invite=${encodeURIComponent(p[1])}`;
-  if (p[0] === "addstickers" && p[1]) return `${s}://addstickers?set=${encodeURIComponent(p[1])}`;
-  if (p[0] === "share" && p[1] === "url") return `${s}://msg_url?url=${encodeURIComponent(qval(qs, "url"))}&text=${encodeURIComponent(qval(qs, "text"))}`;
-  if (p[1] && /^\d+$/.test(p[1])) return `${s}://resolve?domain=${encodeURIComponent(p[0])}&post=${encodeURIComponent(p[1])}`;
-  return `${s}://resolve?domain=${encodeURIComponent(p[0])}`;
+  if (p[0][0] === "+") return `join?invite=${encodeURIComponent(p[0].slice(1))}`;
+  if (p[0] === "joinchat" && p[1]) return `join?invite=${encodeURIComponent(p[1])}`;
+  if (p[0] === "addstickers" && p[1]) return `addstickers?set=${encodeURIComponent(p[1])}`;
+  if (p[0] === "share" && p[1] === "url") {
+    return `msg_url?url=${encodeURIComponent(qval(qs, "url"))}&text=${encodeURIComponent(qval(qs, "text"))}`;
+  }
+  if (p[1] && /^\d+$/.test(p[1])) {
+    return `resolve?domain=${encodeURIComponent(p[0])}&post=${encodeURIComponent(p[1])}`;
+  }
+  return `resolve?domain=${encodeURIComponent(p[0])}`;
 }
 
 (function () {
@@ -44,44 +51,113 @@ function deeplink(s, path, qs) {
   const path = qi < 0 ? tail : tail.slice(0, qi);
   const qs = qi < 0 ? "" : tail.slice(qi + 1);
 
-  // 生成各客户端的选择按钮
-  let buttonsHtml = "";
-  for (const [name, scheme] of Object.entries(SCHEMES)) {
-    const link = deeplink(scheme, path, qs);
-    buttonsHtml += `<a href="${link}" class="btn">${name}</a>`;
+  const linkPath = getDeepLinkPath(path, qs);
+  if (!linkPath) {
+    $done({});
+    return;
   }
+
+  // 生成选项按钮
+  const buttonsHtml = CLIENTS.map(c => `
+    <button class="btn" onclick="openClient('${c.scheme}')">${c.name}</button>
+  `).join("");
 
   const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>选择打开方式</title>
+  <title>选择打开的客户端</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 90vh; margin: 0; background-color: #f7f9fa; }
-    .card { background: white; padding: 24px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); width: 85%; max-width: 320px; text-align: center; }
-    h3 { margin-top: 0; margin-bottom: 16px; font-size: 18px; color: #1c1e21; }
-    .btn { display: block; padding: 12px; margin-bottom: 10px; background-color: #0088cc; color: white; text-decoration: none; border-radius: 10px; font-size: 15px; font-weight: 500; transition: background 0.2s; }
-    .btn:last-child { margin-bottom: 0; }
-    .btn:active { background-color: #006699; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f2f2f7;
+      margin: 0;
+      padding: 30px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 80vh;
+      justify-content: center;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 24px 20px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      text-align: center;
+      box-sizing: border-box;
+    }
+    h2 { margin: 0 0 8px 0; font-size: 19px; color: #1c1c1e; }
+    p { margin: 0 0 20px 0; font-size: 13px; color: #8e8e93; }
+    .btn {
+      width: 100%;
+      padding: 13px;
+      margin-bottom: 10px;
+      font-size: 16px;
+      font-weight: 500;
+      border: none;
+      border-radius: 12px;
+      background: #007aff;
+      color: #fff;
+      cursor: pointer;
+      outline: none;
+      transition: opacity 0.2s;
+    }
+    .btn:active { opacity: 0.7; }
+    .btn-auto {
+      background: #34c759;
+      margin-bottom: 16px;
+      display: none;
+    }
   </style>
 </head>
 <body>
   <div class="card">
-    <h3>选择 Telegram 客户端</h3>
+    <h2>选择打开方式</h2>
+    <p>请选择你要唤起的 Telegram 客户端</p>
+    <button id="lastBtn" class="btn btn-auto" onclick="openLast()"></button>
     ${buttonsHtml}
   </div>
+
+  <script>
+    const linkPath = "${linkPath}";
+    const lastScheme = localStorage.getItem("tg_last_scheme");
+    const lastName = localStorage.getItem("tg_last_name");
+
+    if (lastScheme && lastName) {
+      const btn = document.getElementById("lastBtn");
+      btn.innerText = "上次使用: " + lastName;
+      btn.style.display = "block";
+    }
+
+    function openClient(scheme) {
+      const clientName = event.target.innerText;
+      localStorage.setItem("tg_last_scheme", scheme);
+      localStorage.setItem("tg_last_name", clientName);
+      window.location.href = scheme + "://" + linkPath;
+    }
+
+    function openLast() {
+      if (lastScheme) {
+        window.location.href = lastScheme + "://" + linkPath;
+      }
+    }
+  </script>
 </body>
 </html>`;
 
+  // 返回自定义的选择页面
   $done({
     response: {
-      status: 200,
+      status: "HTTP/1.1 200 OK",
       headers: {
         "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "no-store, no-cache"
+        "Cache-Control": "no-store, no-cache",
       },
-      body: html
-    }
+      body: html,
+    },
   });
 })();
