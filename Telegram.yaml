@@ -1,7 +1,0 @@
-# Telegram 客户端跳转选择规则 (Quantumult X)
-
-[rewrite_local]
-^https?:\/\/(?:t\.me|telegram\.me)\/.+ url script-response-body https://raw.githubusercontent.com/用户名/仓库名/分支/TgRedirect_QX.js
-
-[mitm]
-hostname = t.me, telegram.me
